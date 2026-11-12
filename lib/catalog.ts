@@ -3,7 +3,11 @@ import type { Product } from "@/lib/types";
 
 const clothing = [...apparelSizes];
 
-/** Same sample rows as supabase/seed.sql. Prices are placeholders, not final selling prices. */
+/**
+ * Same sample rows as supabase/seed.sql. Prices are placeholders, not final selling prices.
+ * Leave images empty until a real photo exists. A file at public/products/<slug>.jpg
+ * is picked up automatically. See the README.
+ */
 export const sampleProducts: Product[] = [
   {
     id: "sample-tank",
@@ -14,7 +18,7 @@ export const sampleProducts: Product[] = [
     price_ttd: 120,
     sizes: clothing,
     colors: ["Black", "White", "Red"],
-    images: ["/products/ds-logo-tank.svg"],
+    images: [],
     featured: true,
     active: true,
     created_at: "2026-01-01T00:00:00.000Z",
@@ -28,7 +32,7 @@ export const sampleProducts: Product[] = [
     price_ttd: 160,
     sizes: clothing,
     colors: ["Black", "White"],
-    images: ["/products/ds-glitter-tee.svg"],
+    images: [],
     featured: true,
     active: true,
     created_at: "2026-01-02T00:00:00.000Z",
@@ -42,7 +46,7 @@ export const sampleProducts: Product[] = [
     price_ttd: 150,
     sizes: clothing,
     colors: ["Black", "White", "Red"],
-    images: ["/products/ds-swirl-tee.svg"],
+    images: [],
     featured: true,
     active: true,
     created_at: "2026-01-03T00:00:00.000Z",
@@ -56,7 +60,7 @@ export const sampleProducts: Product[] = [
     price_ttd: 280,
     sizes: clothing,
     colors: ["Black", "Grey"],
-    images: ["/products/ds-crewneck.svg"],
+    images: [],
     featured: true,
     active: true,
     created_at: "2026-01-04T00:00:00.000Z",
@@ -70,7 +74,7 @@ export const sampleProducts: Product[] = [
     price_ttd: 90,
     sizes: ["One size"],
     colors: ["Black", "Red"],
-    images: ["/products/ds-dad-cap.svg"],
+    images: [],
     featured: false,
     active: true,
     created_at: "2026-01-05T00:00:00.000Z",
@@ -84,7 +88,7 @@ export const sampleProducts: Product[] = [
     price_ttd: 180,
     sizes: ["6", "7", "8", "9", "10", "11", "12"],
     colors: ["Camo"],
-    images: ["/products/ds-slippers.svg"],
+    images: [],
     featured: false,
     active: true,
     created_at: "2026-01-06T00:00:00.000Z",
@@ -98,7 +102,7 @@ export const sampleProducts: Product[] = [
     price_ttd: 350,
     sizes: ["One size"],
     colors: ["Black", "Gold"],
-    images: ["/products/ds-watch.svg"],
+    images: [],
     featured: false,
     active: true,
     created_at: "2026-01-07T00:00:00.000Z",
