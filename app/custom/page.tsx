@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { Brush } from "@/components/brush";
+import Link from "next/link";
 import { CustomOrderForm } from "@/components/custom-order-form";
+import { Reveal } from "@/components/reveal";
 
 export const metadata: Metadata = {
   title: "Custom orders",
@@ -10,15 +11,20 @@ export const metadata: Metadata = {
 
 export default function CustomPage() {
   return (
+    <Reveal>
     <div className="mx-auto w-full max-w-xl px-4 py-8 sm:px-6 md:py-12">
-      <h1 className="font-display text-5xl leading-none md:text-6xl">Custom orders</h1>
-      <Brush className="mt-3 h-3 w-28 text-brand" />
+      <h1 className="font-display text-5xl leading-none uppercase md:text-6xl">Custom orders</h1>
       <p className="mt-4 text-lg">
-        Jerseys, t-shirts, and mugs. Tell us the names, numbers, and colors, and send a design if you have one.
+        Jerseys, t-shirts, and mugs. Tell us the names, numbers, and colors, and send a design if you have one. Or{" "}
+        <Link href="/design" className="underline decoration-brand decoration-2 underline-offset-4">
+          design your own
+        </Link>{" "}
+        and send the mockup.
       </p>
       <div className="mt-8">
         <CustomOrderForm />
       </div>
     </div>
+    </Reveal>
   );
 }

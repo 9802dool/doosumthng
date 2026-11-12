@@ -71,7 +71,7 @@ export function ProductOrder({ product }: { product: Product }) {
                 type="button"
                 aria-pressed={size === option}
                 onClick={() => setSize(option)}
-                className={`min-h-12 min-w-12 px-3 ${size === option ? "bg-ink text-paper" : "text-ink"}`}
+                className={`min-h-12 min-w-12 border px-3 ${size === option ? "border-ink bg-ink text-paper" : "border-ink/25 text-ink"}`}
               >
                 {option}
               </button>
@@ -87,7 +87,7 @@ export function ProductOrder({ product }: { product: Product }) {
                 type="button"
                 aria-pressed={color === option}
                 onClick={() => setColor(option)}
-                className={`min-h-12 px-3 ${color === option ? "shadow-[inset_0_-2px_0_0_var(--brand)]" : "text-muted"}`}
+                className={`min-h-12 border px-3 ${color === option ? "border-brand text-ink shadow-[inset_0_-2px_0_0_var(--brand)]" : "border-ink/25 text-muted"}`}
               >
                 {option}
               </button>

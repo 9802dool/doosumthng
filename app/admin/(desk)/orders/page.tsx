@@ -33,14 +33,26 @@ export default async function OrdersPage() {
                 {order.phone}
               </a>
               {" · "}
-              <a className="underline" href={`mailto:${order.email}`}>
-                {order.email}
-              </a>
+              {order.email ? (
+                <a className="underline" href={`mailto:${order.email}`}>
+                  {order.email}
+                </a>
+              ) : (
+                <span>No email</span>
+              )}
               {order.design_url ? (
                 <>
                   {" · "}
                   <a className="underline" href={order.design_url}>
                     Design file
+                  </a>
+                </>
+              ) : null}
+              {order.mockup_url && order.mockup_url !== order.design_url ? (
+                <>
+                  {" · "}
+                  <a className="underline" href={order.mockup_url}>
+                    Mockup
                   </a>
                 </>
               ) : null}

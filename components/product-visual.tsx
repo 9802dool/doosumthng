@@ -26,12 +26,12 @@ export function ProductVisual({
           fill
           sizes={sizes}
           priority={priority}
-          className="piece-zoom object-cover transition duration-500 group-hover:scale-[1.03]"
+          className="piece-zoom object-cover transition duration-500 group-hover:scale-105"
         />
       ) : (
         // Remote hosts outside Supabase are owner-supplied and not in the image allowlist.
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={photo} alt={alt} className="absolute inset-0 h-full w-full object-cover" />
+        <img src={photo} alt={alt} className="piece-zoom absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105" />
       )}
     </div>
   );
