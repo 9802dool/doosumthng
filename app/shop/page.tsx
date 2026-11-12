@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
-import { Brush } from "@/components/brush";
 import { ProductCard } from "@/components/product-card";
+import { Reveal } from "@/components/reveal";
 import { categories } from "@/lib/site";
 import { getProducts } from "@/lib/products";
 
@@ -37,11 +37,8 @@ async function ShopResults({
 
   return (
     <div className="wrap py-8 md:py-12">
-      <h1 className="font-display text-6xl leading-none md:text-7xl">Shop</h1>
-      <Brush className="mt-3 h-3 w-28 text-brand" />
-      <p className="mt-4 max-w-xl text-lg">
-        Tees, tanks, sweaters, caps, slippers, and accessories. Prices in TT$.
-      </p>
+      <h1 className="font-display text-6xl leading-none uppercase md:text-7xl">Shop</h1>
+      <p className="mt-4 max-w-xl text-lg">Tees, tanks, sweaters, caps, slippers, and accessories. Prices in TT$.</p>
       <nav className="mt-6 flex gap-5 overflow-x-auto pb-2" aria-label="Categories">
         <CategoryLink href="/shop" active={!category}>
           All
@@ -61,7 +58,9 @@ async function ShopResults({
       {visible.length ? (
         <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 md:gap-x-8">
           {visible.map((product, index) => (
-            <ProductCard key={product.id} product={product} priority={index < 2} />
+            <Reveal key={product.id} delay={Math.min(index, 5) * 0.04}>
+              <ProductCard product={product} priority={index < 2} />
+            </Reveal>
           ))}
         </div>
       ) : (
@@ -90,10 +89,9 @@ function CategoryLink({
     <Link
       href={href}
       aria-current={active ? "page" : undefined}
-      className={`relative shrink-0 py-3 text-sm ${active ? "text-ink" : "text-muted"}`}
+      className={`shrink-0 border-b-2 py-3 text-sm whitespace-nowrap ${active ? "border-brand text-ink" : "border-transparent text-muted"}`}
     >
       {children}
-      {active ? <Brush className="absolute right-0 -bottom-1 left-0 h-2 text-brand" /> : null}
     </Link>
   );
 }

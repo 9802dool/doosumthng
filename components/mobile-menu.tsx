@@ -2,14 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { navLinks } from "@/lib/nav";
 import { site } from "@/lib/site";
-
-const links = [
-  { href: "/shop", label: "Shop" },
-  { href: "/custom", label: "Custom" },
-  { href: "/about", label: "About" },
-  { href: "/contact", label: "Contact" },
-];
 
 export function MobileMenu() {
   const [open, setOpen] = useState(false);
@@ -32,28 +27,29 @@ export function MobileMenu() {
     <>
       <button
         type="button"
-        className="min-h-12 min-w-12 px-1 text-[0.95rem] md:hidden"
+        className="min-h-12 min-w-12 px-1 text-[0.95rem] lg:hidden"
         aria-expanded={open}
         aria-controls="site-menu"
         onClick={() => setOpen((value) => !value)}
       >
         {open ? "Close" : "Menu"}
       </button>
-      {open ? (
-        <nav id="site-menu" aria-label="Mobile" className="fixed inset-0 z-50 flex flex-col bg-paper px-6 pt-6 md:hidden">
+      {open
+        ? createPortal(
+        <nav id="site-menu" aria-label="Mobile" className="fixed inset-0 z-[80] flex flex-col overflow-y-auto bg-paper px-6 pt-6 lg:hidden">
           <div className="flex items-center justify-between">
-            <span className="font-display text-2xl">{site.name}</span>
+            <span className="font-display text-2xl uppercase">{site.name}</span>
             <button type="button" className="min-h-12 min-w-12" onClick={() => setOpen(false)}>
               Close
             </button>
           </div>
-          <div className="mt-10 flex flex-col">
-            {links.map((link) => (
+          <div className="mt-8 flex flex-col">
+            {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 onClick={() => setOpen(false)}
-                className="border-b border-ink/10 py-4 font-display text-5xl leading-none"
+                className="border-b border-ink/15 py-4 font-display text-4xl leading-none uppercase"
               >
                 {link.label}
               </Link>
@@ -62,8 +58,10 @@ export function MobileMenu() {
               Instagram {site.instagram}
             </a>
           </div>
-        </nav>
-      ) : null}
+        </nav>,
+          document.body,
+        )
+        : null}
     </>
   );
 }

@@ -1,23 +1,30 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Outfit } from "next/font/google";
+import { Anton, Caveat, Inter } from "next/font/google";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { site } from "@/lib/site";
 import "./globals.css";
 
-const display = Fraunces({
+const display = Anton({
+  subsets: ["latin"],
+  weight: "400",
+  display: "swap",
+  variable: "--font-anton",
+});
+
+const sans = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+  variable: "--font-inter",
+});
+
+const script = Caveat({
   subsets: ["latin"],
   weight: ["500", "700"],
   display: "swap",
-  variable: "--font-fraunces",
-});
-
-const sans = Outfit({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  display: "swap",
-  variable: "--font-outfit",
+  variable: "--font-caveat",
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://doosumthng.vercel.app";
@@ -48,14 +55,14 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f4f0e6",
+  themeColor: "#0A0A0B",
   width: "device-width",
   initialScale: 1,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${display.variable} ${sans.variable} h-full`}>
+    <html lang="en" className={`${display.variable} ${sans.variable} ${script.variable} h-full`}>
       <body className="flex min-h-full flex-col bg-paper font-sans text-ink antialiased">
         <a
           href="#content"

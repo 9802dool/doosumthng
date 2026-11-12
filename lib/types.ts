@@ -26,6 +26,8 @@ export type CustomOrder = {
   print_number: string | null;
   notes: string | null;
   design_url: string | null;
+  mockup_url?: string | null;
+  product_type?: string | null;
   needed_by: string | null;
   status: string;
   created_at: string;

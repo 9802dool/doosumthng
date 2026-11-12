@@ -41,7 +41,7 @@ export function GarmentArt({ product }: { product: Product }) {
 
   return (
     <div className="relative aspect-[4/5] overflow-hidden" style={{ backgroundColor: ground }}>
-      <svg viewBox="0 0 200 250" className="absolute inset-0 h-full w-full" aria-hidden="true">
+      <svg viewBox="0 0 200 250" className="piece-zoom absolute inset-0 h-full w-full transition duration-500 group-hover:scale-105" aria-hidden="true">
         {kind === "Caps" ? <Cap fill={garment} ink={ink} label={label} /> : null}
         {kind === "Slippers" ? <Slides fill={garment} label={label} /> : null}
         {kind === "Accessories" ? <Watch /> : null}

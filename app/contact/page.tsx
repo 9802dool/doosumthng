@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Brush } from "@/components/brush";
+import { Reveal } from "@/components/reveal";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -10,9 +10,9 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   return (
+    <Reveal>
     <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 md:py-12">
-      <h1 className="font-display text-6xl leading-none">Contact</h1>
-      <Brush className="mt-3 h-3 w-28 text-brand" />
+      <h1 className="font-display text-6xl leading-none uppercase">Contact</h1>
       <ul className="mt-8 space-y-3 text-lg">
         <li>
           Email{" "}
@@ -38,12 +38,13 @@ export default function ContactPage() {
           </a>
         </li>
       </ul>
-      <h2 className="mt-12 font-display text-4xl">Payment</h2>
+      <h2 className="mt-12 font-display text-4xl uppercase">Payment</h2>
       <ul className="mt-4 list-disc space-y-2 pl-5 text-lg">
         <li>Cash on delivery.</li>
         <li>Bank transfer. We send the account details when we confirm your order.</li>
         <li>Card payments with WiPay are planned for later. They are not available on this site yet.</li>
       </ul>
     </div>
+    </Reveal>
   );
 }
