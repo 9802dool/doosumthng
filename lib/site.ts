@@ -10,7 +10,8 @@ export const site = {
     { label: "(868) 345-8301", tel: "tel:+18683458301", whatsapp: "18683458301" },
   ],
   logo: "/logo.png",
-  logoAlt: "DooSumThng — red DS letters in a black brush-stroke circle",
+  logoMark: "/logo-mark.png",
+  logoAlt: "DooSumThng — red DS letters in a white brush-stroke circle with black swirl strokes",
 } as const;
 
 export const adminEmail = "doosumthng@gmail.com";

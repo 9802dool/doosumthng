@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DooSumThng
 
-## Getting Started
+DooSumThng is a Trinidad and Tobago clothing brand. Tagline: **Doosumthng With A Difference**. Instagram [@doosumthng](https://www.instagram.com/doosumthng/).
 
-First, run the development server:
+`public/logo.png` is the official mark on its black square (used for the browser icon and link previews). `public/logo-mark.png` is the same mark with that square removed, so the header, footer, and product cards stay clear on light and dark.
+
+The shop lists tees, tanks, sweaters, caps, slippers, and accessories in TT$. Orders go out on WhatsApp. Custom jerseys, t-shirts, and mugs use the form on `/custom`. The owner manages products and those orders at `/admin`.
+
+## Run it
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Without Supabase, the site uses the sample catalog in `lib/catalog.ts`. Copy `.env.example` to `.env.local` when you connect a project. The tables are in `supabase/schema.sql`, and `supabase/seed.sql` loads the same sample products.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Product photos
 
-## Learn More
+Cards draw a garment silhouette until a real photo exists. Two ways to add one:
 
-To learn more about Next.js, take a look at the following resources:
+1. **Drop a file in the repo.** Save it as `public/products/<slug>.jpg` (`.jpeg`, `.png`, `.webp`, and `.avif` work too). The slug is the product link, for example `public/products/ds-logo-tank-top.jpg`. Push the file (or redeploy) and the shop uses it. A file named like this is shown before any URL saved in admin.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   Current slugs:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   - `ds-logo-tank-top`
+   - `ds-glitter-logo-tee`
+   - `ds-swirl-logo-tee`
+   - `ds-crewneck-sweater`
+   - `ds-dad-cap`
+   - `ds-camo-beach-slippers`
+   - `ds-designer-watch`
 
-## Deploy on Vercel
+2. **Use the owner desk.** Sign in at `/admin`, open a product, and either paste a direct image URL (one per line) or upload a photo. Uploads need the Supabase `product-images` bucket from `supabase/schema.sql`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Sample prices in the catalog are placeholders, not final selling prices.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Home page photo
+
+The home hero is type until you add a lifestyle photo. Save it as one of:
+
+- `public/hero.jpg`
+- `public/hero.jpeg`
+- `public/hero.png`
+- `public/hero.webp`
+- `public/hero.avif`
+
+Redeploy and it fills the hero.
+
+## About copy
+
+The about story is a placeholder. Edit `app/about/page.tsx` when the real story is ready.
+
+## Contact
+
+- doosumthng@gmail.com
+- (868) 356-3722
+- (868) 345-8301
+- Instagram @doosumthng
+
+Payment on the site is cash on delivery or bank transfer. Card payments are not set up yet.
