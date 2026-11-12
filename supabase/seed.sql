@@ -100,5 +100,19 @@ values
     false,
     true,
     '2026-01-07T00:00:00Z'
+  ),
+  (
+    '11111111-1111-4111-8111-111111111108',
+    'DS Pullover Hoodie',
+    'ds-pullover-hoodie',
+    'Sweaters',
+    'A heavy pullover hoodie with a big DS logo on the chest.',
+    300,
+    array['XS','S','M','L','XL','2XL','3XL'],
+    array['Red','Maroon'],
+    array['/products/ds-pullover-hoodie-2.jpg']::text[],
+    true,
+    true,
+    '2026-01-08T00:00:00Z'
   )
 on conflict (slug) do nothing;
