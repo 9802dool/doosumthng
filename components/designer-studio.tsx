@@ -2,13 +2,18 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import type Konva from "konva";
-import { Ellipse, Group, Image as KonvaImage, Layer, Path, Rect, Shape, Stage, Text, Transformer } from "react-konva";
+import { Group, Image as KonvaImage, Layer, Rect, Stage, Text, Transformer } from "react-konva";
 import { submitDesignOrder } from "@/app/design/actions";
 import {
+  canvasGrey,
+  designBlend,
   designProducts,
   garmentColours,
   inkForGarment,
+  isDarkGarment,
+  mockupSrc,
   printArea,
+  productFrame,
   stageSize,
   type DesignProductId,
   type DesignSide,
@@ -41,12 +46,6 @@ type Snapshot = {
 };
 
 const EMPTY_BOARD: DesignNode[] = [];
-const TEE = "M124 108 C160 82 260 82 296 108 L374 140 L330 186 L302 150 L296 452 C246 476 174 476 124 452 L118 150 L90 186 L46 140 Z";
-const JERSEY = "M116 114 C158 78 262 78 304 114 L396 156 L336 210 L308 158 L302 470 C246 494 174 494 118 470 L112 158 L84 210 L24 156 Z";
-const SCOOP = "M176 104 C192 146 228 146 244 104 C224 122 196 122 176 104 Z";
-const VNECK = "M174 106 L210 164 L246 106 C226 122 194 122 174 106 Z";
-const MUG = "M132 176 C132 148 288 148 288 176 L282 400 C282 434 138 434 138 400 Z";
-const HANDLE = "M284 214 C360 208 362 366 284 370 L274 336 C330 330 328 250 274 244 Z";
 
 function boardKey(product: DesignProductId, side: DesignSide) {
   return `${product}:${side}`;
@@ -68,52 +67,11 @@ function fitBox(x: number, y: number, width: number, height: number, bounds: { w
   };
 }
 
-function rasterDesign(items: DesignNode[], images: Record<string, HTMLImageElement>, print: { width: number; height: number }) {
-  const ratio = 2;
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.max(1, Math.round(print.width * ratio));
-  canvas.height = Math.max(1, Math.round(print.height * ratio));
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return canvas;
-  ctx.scale(ratio, ratio);
-  for (const item of items) {
-    ctx.save();
-    ctx.translate(item.x, item.y);
-    ctx.rotate((item.rotation * Math.PI) / 180);
-    if (item.kind === "image") {
-      const image = images[item.id];
-      if (image) ctx.drawImage(image, -item.width / 2, -item.height / 2, item.width, item.height);
-    } else {
-      ctx.fillStyle = item.fill || "#161412";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.font = `${item.fontSize || 32}px ${item.fontFamily || "sans-serif"}`;
-      ctx.fillText(item.text || "", 0, 0);
-    }
-    ctx.restore();
-  }
-  return canvas;
-}
-
-function drawMugWrap(ctx: Konva.Context, art: HTMLCanvasElement, box: { x: number; y: number; width: number; height: number }) {
-  const slices = 42;
-  for (let index = 0; index < slices; index += 1) {
-    const curve = Math.sin(((index + 0.5) / slices) * Math.PI);
-    const srcW = art.width / slices;
-    const slot = box.width / slices;
-    const destW = slot * (0.38 + 0.62 * curve);
-    const destX = box.x + index * slot + (slot - destW) / 2;
-    const destH = box.height * (0.9 + 0.1 * curve);
-    const destY = box.y + (box.height - destH) / 2;
-    ctx.drawImage(art, index * srcW, 0, srcW + 0.5, art.height, destX, destY, destW, destH);
-  }
-}
-
 export default function DesignerStudio() {
   const stageRef = useRef<Konva.Stage>(null);
   const trRef = useRef<Konva.Transformer>(null);
+  const designRef = useRef<Konva.Group>(null);
   const frameRef = useRef<HTMLDivElement>(null);
-  const [images, setImages] = useState<Record<string, HTMLImageElement>>({});
   const pastRef = useRef<Snapshot[]>([]);
   const idRef = useRef(1);
   const captureMode = useRef<"download" | "send">("download");
@@ -127,6 +85,7 @@ export default function DesignerStudio() {
   const [playerNumber, setPlayerNumber] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [real, setReal] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const [scale, setScale] = useState(1);
   const [imageTick, setImageTick] = useState(0);
@@ -149,7 +108,9 @@ export default function DesignerStudio() {
   const print = printArea(product, side);
   const items = boards[boardKey(product, side)] ?? EMPTY_BOARD;
   const printed = real || capturing;
-  const ink = inkForGarment(swatch.hex);
+  const ink = inkForGarment(colour);
+  const blend = designBlend(colour);
+  const childBlend = product === "mug" ? { composite: "source-over" as const, opacity: 1 } : blend;
   const blurry = items.some((item) => item.lowRes);
 
   function remember() {
@@ -191,8 +152,7 @@ export default function DesignerStudio() {
     setSelectedId(node.id);
   }
 
-  const rememberImage = useCallback((id: string, image: HTMLImageElement) => {
-    setImages((current) => ({ ...current, [id]: image }));
+  const rememberImage = useCallback(() => {
     setImageTick((value) => value + 1);
   }, []);
 
@@ -240,6 +200,16 @@ export default function DesignerStudio() {
     }
     transformer.getLayer()?.batchDraw();
   }, [selectedId, printed, items, scale, side, product, imageTick]);
+
+  useEffect(() => {
+    const node = designRef.current;
+    if (!node) return;
+    node.clearCache();
+    if (product === "mug" && !dragging) {
+      node.cache({ pixelRatio: 2 });
+      node.getLayer()?.batchDraw();
+    }
+  }, [product, dragging, items, imageTick, playerName, playerNumber, colour, side, fonts, ink]);
 
   useEffect(() => {
     if (!capturing) return;
@@ -362,9 +332,9 @@ export default function DesignerStudio() {
   ];
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:items-start">
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,500px)_minmax(0,1fr)] lg:items-start">
       <div>
-        <div ref={frameRef} className="w-full border border-ink/15 bg-black">
+        <div ref={frameRef} className="w-full border border-ink/15 bg-[#E9E9E9]">
           <Stage
             ref={stageRef}
             width={stageSize.width * scale}
@@ -377,19 +347,18 @@ export default function DesignerStudio() {
             }}
           >
             <Layer scaleX={scale} scaleY={scale}>
-              <Rect name="background" width={stageSize.width} height={stageSize.height} fill="#0A0A0B" />
-              <Garment product={product} side={side} fill={swatch.hex} />
-              {printed && product === "mug" ? (
-                <MugWrap key={`${imageTick}-${items.map((item) => item.id).join(",")}-${swatch.hex}`} items={items} images={images} print={print} />
-              ) : null}
+              <Rect name="background" width={stageSize.width} height={stageSize.height} fill={canvasGrey} />
+              <ProductPhoto src={mockupSrc(product, side)} colour={swatch.hex} dark={isDarkGarment(colour)} />
               <Group
+                ref={designRef}
                 x={print.x}
                 y={print.y}
                 clipX={0}
                 clipY={0}
                 clipWidth={print.width}
                 clipHeight={print.height}
-                visible={!(printed && product === "mug")}
+                globalCompositeOperation={product === "mug" ? blend.composite : "source-over"}
+                opacity={product === "mug" ? blend.opacity : 1}
               >
                 {product === "jersey" && side === "back" && playerName ? (
                   <Text
@@ -404,7 +373,8 @@ export default function DesignerStudio() {
                     fontSize={28}
                     fill={ink}
                     listening={false}
-                    globalCompositeOperation={printed ? "multiply" : "source-over"}
+                    globalCompositeOperation={childBlend.composite}
+                    opacity={childBlend.opacity}
                   />
                 ) : null}
                 {product === "jersey" && side === "back" && playerNumber ? (
@@ -420,7 +390,8 @@ export default function DesignerStudio() {
                     fontSize={96}
                     fill={ink}
                     listening={false}
-                    globalCompositeOperation={printed ? "multiply" : "source-over"}
+                    globalCompositeOperation={childBlend.composite}
+                    opacity={childBlend.opacity}
                   />
                 ) : null}
                 {items.map((item) =>
@@ -428,25 +399,40 @@ export default function DesignerStudio() {
                     <ArtworkImage
                       key={item.id}
                       item={item}
-                      printed={printed}
+                      composite={childBlend.composite}
+                      opacity={childBlend.opacity}
                       bounds={print}
                       onReady={rememberImage}
                       onSelect={() => setSelectedId(item.id)}
                       onRemember={remember}
                       onChange={(patch) => updateItem(item.id, patch)}
+                      onDragState={setDragging}
                     />
                   ) : (
                     <ArtworkText
                       key={item.id}
                       item={item}
-                      printed={printed}
+                      composite={childBlend.composite}
+                      opacity={childBlend.opacity}
                       bounds={print}
                       onSelect={() => setSelectedId(item.id)}
                       onRemember={remember}
                       onChange={(patch) => updateItem(item.id, patch)}
+                      onDragState={setDragging}
                     />
                   ),
                 )}
+                {product === "mug" && !dragging ? (
+                  <Rect
+                    width={print.width}
+                    height={print.height}
+                    listening={false}
+                    globalCompositeOperation="destination-in"
+                    fillLinearGradientStartPoint={{ x: 0, y: 0 }}
+                    fillLinearGradientEndPoint={{ x: print.width, y: 0 }}
+                    fillLinearGradientColorStops={[0, "rgba(0,0,0,0.4)", 0.14, "rgba(0,0,0,1)", 0.86, "rgba(0,0,0,1)", 1, "rgba(0,0,0,0.4)"]}
+                  />
+                ) : null}
               </Group>
               {!printed ? (
                 <Rect
@@ -466,6 +452,7 @@ export default function DesignerStudio() {
         </div>
         <p className="mt-2 text-sm text-muted">
           {piece.label} · {swatch.label} · {money(piece.price)}
+          {side === "back" ? " · back" : ""}
           {printed ? " · print preview" : " · dashed box is the print area"}
         </p>
       </div>
@@ -646,9 +633,6 @@ export default function DesignerStudio() {
             {note}
           </p>
         ) : null}
-        {real && colour === "black" ? (
-          <p className="text-sm text-muted">On black, the print preview looks darker because it uses a multiply blend.</p>
-        ) : null}
       </div>
 
       {sendOpen ? (
@@ -682,75 +666,69 @@ export default function DesignerStudio() {
   );
 }
 
-function Garment({ product, side, fill }: { product: DesignProductId; side: DesignSide; fill: string }) {
-  if (product === "mug") {
-    return (
-      <>
-        <Path data={HANDLE} fill={fill} listening={false} />
-        <Path data={MUG} fill={fill} listening={false} />
-        <Ellipse x={210} y={176} radiusX={78} radiusY={16} fill={fill} stroke="#0A0A0B" strokeWidth={2} listening={false} />
-        <Path data="M150 190 C162 210 168 300 162 390" stroke="#000" strokeWidth={10} opacity={0.18} listening={false} />
-        <Ellipse x={210} y={176} radiusX={62} radiusY={8} fill="#0A0A0B" opacity={0.35} listening={false} />
-      </>
-    );
-  }
-  const body = product === "jersey" ? JERSEY : TEE;
-  const neck = product === "jersey" && side === "front" ? VNECK : SCOOP;
-  return (
-    <>
-      <Path data={body} fill={fill} listening={false} />
-      <Path data={neck} fill="#0A0A0B" listening={false} />
-    </>
-  );
-}
+function ProductPhoto({ src, colour, dark }: { src: string; colour: string; dark: boolean }) {
+  const groupRef = useRef<Konva.Group>(null);
+  const [image, setImage] = useState<HTMLImageElement | null>(null);
+  const size = productFrame.size;
 
-function MugWrap({
-  items,
-  images,
-  print,
-}: {
-  items: DesignNode[];
-  images: Record<string, HTMLImageElement>;
-  print: { x: number; y: number; width: number; height: number };
-}) {
+  useEffect(() => {
+    const next = new window.Image();
+    next.onload = () => setImage(next);
+    next.src = src;
+    return () => setImage(null);
+  }, [src]);
+
+  useEffect(() => {
+    const group = groupRef.current;
+    if (!group || !image) return;
+    group.clearCache();
+    group.cache({ pixelRatio: 2 });
+    group.getLayer()?.batchDraw();
+  }, [image, colour, dark, size]);
+
+  if (!image) return null;
+
   return (
-    <Shape
+    <Group
+      ref={groupRef}
+      x={productFrame.x}
+      y={productFrame.y}
       listening={false}
-      sceneFunc={(context, shape) => {
-        const art = rasterDesign(items, images, print);
-        context.save();
-        context.beginPath();
-        context.moveTo(138, 184);
-        context.bezierCurveTo(138, 156, 282, 156, 282, 184);
-        context.lineTo(276, 396);
-        context.bezierCurveTo(276, 426, 144, 426, 144, 396);
-        context.closePath();
-        context.clip();
-        context.globalCompositeOperation = "multiply";
-        drawMugWrap(context, art, print);
-        context.restore();
-        context.fillStrokeShape(shape);
-      }}
-    />
+      shadowColor="rgba(0,0,0,0.45)"
+      shadowBlur={28}
+      shadowOffsetY={16}
+      shadowOpacity={0.4}
+    >
+      <KonvaImage image={image} width={size} height={size} />
+      <Rect width={size} height={size} fill={colour} globalCompositeOperation="multiply" listening={false} />
+      <KonvaImage image={image} width={size} height={size} globalCompositeOperation="destination-in" listening={false} />
+      {dark ? (
+        <KonvaImage image={image} width={size} height={size} globalCompositeOperation="screen" opacity={0.2} listening={false} />
+      ) : null}
+    </Group>
   );
 }
 
 function ArtworkImage({
   item,
-  printed,
+  composite,
+  opacity,
   bounds,
   onReady,
   onSelect,
   onRemember,
   onChange,
+  onDragState,
 }: {
   item: DesignNode;
-  printed: boolean;
+  composite: "source-over" | "multiply";
+  opacity: number;
   bounds: { width: number; height: number };
-  onReady: (id: string, image: HTMLImageElement) => void;
+  onReady: () => void;
   onSelect: () => void;
   onRemember: () => void;
   onChange: (patch: Partial<DesignNode>) => void;
+  onDragState: (dragging: boolean) => void;
 }) {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
 
@@ -759,7 +737,7 @@ function ArtworkImage({
     const next = new window.Image();
     next.onload = () => {
       setImage(next);
-      onReady(item.id, next);
+      onReady();
     };
     next.src = item.src;
   }, [item.id, item.src, onReady]);
@@ -777,8 +755,9 @@ function ArtworkImage({
       offsetX={item.width / 2}
       offsetY={item.height / 2}
       rotation={item.rotation}
-      draggable={!printed}
-      globalCompositeOperation={printed ? "multiply" : "source-over"}
+      opacity={opacity}
+      draggable
+      globalCompositeOperation={composite}
       onMouseDown={(event) => {
         event.cancelBubble = true;
         onSelect();
@@ -787,15 +766,25 @@ function ArtworkImage({
         event.cancelBubble = true;
         onSelect();
       }}
-      onDragStart={onRemember}
+      onDragStart={() => {
+        onRemember();
+        onDragState(true);
+      }}
       onDragMove={(event) => clampNode(event.target, bounds)}
-      onDragEnd={(event) => onChange({ x: event.target.x(), y: event.target.y() })}
-      onTransformStart={onRemember}
+      onDragEnd={(event) => {
+        onDragState(false);
+        onChange({ x: event.target.x(), y: event.target.y() });
+      }}
+      onTransformStart={() => {
+        onRemember();
+        onDragState(true);
+      }}
       onTransformEnd={(event) => {
         const node = event.target;
         const placed = fitBox(node.x(), node.y(), node.width() * node.scaleX(), node.height() * node.scaleY(), bounds);
         node.scaleX(1);
         node.scaleY(1);
+        onDragState(false);
         onChange({ ...placed, rotation: node.rotation() });
       }}
     />
@@ -804,18 +793,22 @@ function ArtworkImage({
 
 function ArtworkText({
   item,
-  printed,
+  composite,
+  opacity,
   bounds,
   onSelect,
   onRemember,
   onChange,
+  onDragState,
 }: {
   item: DesignNode;
-  printed: boolean;
+  composite: "source-over" | "multiply";
+  opacity: number;
   bounds: { width: number; height: number };
   onSelect: () => void;
   onRemember: () => void;
   onChange: (patch: Partial<DesignNode>) => void;
+  onDragState: (dragging: boolean) => void;
 }) {
   const fontSize = item.fontSize || 32;
   return (
@@ -832,8 +825,9 @@ function ArtworkText({
       fontSize={fontSize}
       fill={item.fill || "#161412"}
       rotation={item.rotation}
-      draggable={!printed}
-      globalCompositeOperation={printed ? "multiply" : "source-over"}
+      opacity={opacity}
+      draggable
+      globalCompositeOperation={composite}
       onMouseDown={(event) => {
         event.cancelBubble = true;
         onSelect();
@@ -842,16 +836,26 @@ function ArtworkText({
         event.cancelBubble = true;
         onSelect();
       }}
-      onDragStart={onRemember}
+      onDragStart={() => {
+        onRemember();
+        onDragState(true);
+      }}
       onDragMove={(event) => clampNode(event.target, bounds)}
-      onDragEnd={(event) => onChange({ x: event.target.x(), y: event.target.y() })}
-      onTransformStart={onRemember}
+      onDragEnd={(event) => {
+        onDragState(false);
+        onChange({ x: event.target.x(), y: event.target.y() });
+      }}
+      onTransformStart={() => {
+        onRemember();
+        onDragState(true);
+      }}
       onTransformEnd={(event) => {
         const node = event.target;
         const nextSize = Math.max(16, fontSize * node.scaleY());
         const placed = fitBox(node.x(), node.y(), node.width() * node.scaleX(), nextSize, bounds);
         node.scaleX(1);
         node.scaleY(1);
+        onDragState(false);
         onChange({ x: placed.x, y: placed.y, width: placed.width, height: nextSize, fontSize: nextSize, rotation: node.rotation() });
       }}
     />

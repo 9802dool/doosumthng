@@ -14,29 +14,63 @@ export const designProducts: {
   price: number;
   sides: DesignSide[];
 }[] = [
-  { id: "tee", label: "T-shirt", price: designPrices.tee, sides: ["front"] },
+  { id: "tee", label: "T-shirt", price: designPrices.tee, sides: ["front", "back"] },
   { id: "jersey", label: "Jersey", price: designPrices.jersey, sides: ["front", "back"] },
   { id: "mug", label: "Mug", price: designPrices.mug, sides: ["front"] },
 ];
 
 export const garmentColours = [
-  { id: "white", label: "White", hex: "#F3EFE7" },
-  { id: "black", label: "Black", hex: "#17171A" },
+  { id: "white", label: "White", hex: "#FFFFFF" },
+  { id: "black", label: "Black", hex: "#2A2A2A" },
   { id: "red", label: "Red", hex: "#D71216" },
-  { id: "grey", label: "Grey", hex: "#8A8680" },
+  { id: "grey", label: "Grey", hex: "#8A8A8A" },
+  { id: "navy", label: "Navy", hex: "#1F2A44" },
+  { id: "royal", label: "Royal Blue", hex: "#1E4FB4" },
 ] as const;
 
 export type GarmentColourId = (typeof garmentColours)[number]["id"];
 
-export const stageSize = { width: 420, height: 560 };
+export const stageSize = { width: 500, height: 560 };
+export const productFrame = { x: 40, y: 28, size: 420 };
+export const canvasGrey = "#E9E9E9";
 
-export function printArea(product: DesignProductId, side: DesignSide) {
-  if (product === "mug") return { x: 152, y: 206, width: 136, height: 156 };
-  if (product === "jersey" && side === "back") return { x: 116, y: 150, width: 188, height: 250 };
-  if (product === "jersey") return { x: 132, y: 196, width: 156, height: 168 };
-  return { x: 130, y: 186, width: 160, height: 188 };
+/** Print boxes as fractions of each 1000×1000 mockup photo. */
+export const printBoxes = {
+  "tee-front": { x: 0.33, y: 0.26, w: 0.34, h: 0.42 },
+  "tee-back": { x: 0.33, y: 0.2, w: 0.34, h: 0.46 },
+  "jersey-front": { x: 0.34, y: 0.28, w: 0.32, h: 0.4 },
+  "jersey-back": { x: 0.32, y: 0.18, w: 0.36, h: 0.5 },
+  mug: { x: 0.25, y: 0.28, w: 0.42, h: 0.5 },
+} as const;
+
+export function mockupFile(product: DesignProductId, side: DesignSide) {
+  if (product === "mug") return "mug" as const;
+  return `${product}-${side}` as const;
 }
 
-export function inkForGarment(hex: string) {
-  return hex === "#17171A" || hex === "#D71216" ? "#F3EFE7" : "#161412";
+export function mockupSrc(product: DesignProductId, side: DesignSide) {
+  return `/mockups/${mockupFile(product, side)}.png`;
+}
+
+export function printArea(product: DesignProductId, side: DesignSide) {
+  const box = printBoxes[mockupFile(product, side)];
+  return {
+    x: productFrame.x + box.x * productFrame.size,
+    y: productFrame.y + box.y * productFrame.size,
+    width: box.w * productFrame.size,
+    height: box.h * productFrame.size,
+  };
+}
+
+export function isDarkGarment(id: GarmentColourId) {
+  return id === "black" || id === "navy";
+}
+
+export function inkForGarment(id: GarmentColourId) {
+  return isDarkGarment(id) ? "#F4F4F4" : "#1A1A1A";
+}
+
+export function designBlend(id: GarmentColourId) {
+  if (isDarkGarment(id)) return { composite: "source-over" as const, opacity: 0.95 };
+  return { composite: "multiply" as const, opacity: 1 };
 }
